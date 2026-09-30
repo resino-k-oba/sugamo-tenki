@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>巣鴨の天気予報</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#2F4A3B; --frame:#6B4A2E; --chalk:#EFEDE4; --dim:#B7C2B6;
+  --yellow:#EBD66E; --red:#F2917F; --line:rgba(239,237,228,.2);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--board:#1F3228;--frame:#45301E;--dim:#9DA99C}
+}
+:root[data-theme="dark"]{--board:#1F3228;--frame:#45301E;--dim:#9DA99C}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--frame)}
+body{
+  margin:0;min-height:100vh;color:var(--chalk);
+  background:
+    radial-gradient(ellipse at 20% 10%,rgba(255,255,255,.05),transparent 60%),
+    radial-gradient(ellipse at 80% 70%,rgba(255,255,255,.04),transparent 55%),
+    var(--board);
+  border-inline:10px solid var(--frame);
+  font-family:"Klee One","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;
+  line-height:1.75;
+}
+main{max-width:34rem;margin:0 auto;padding:1.25rem 1.1rem 2rem}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:.5rem;border-bottom:2px dashed var(--line);padding-bottom:.6rem}
+h1{font-size:1.35rem;font-weight:600;margin:0;letter-spacing:.08em}
+.place{display:flex;gap:.4rem;align-items:center;font-size:.9rem;color:var(--dim)}
+button{font:inherit;color:var(--chalk);background:transparent;border:1.5px solid var(--line);border-radius:.4rem;padding:.2rem .65rem;cursor:pointer}
+button:focus-visible{outline:2px solid var(--yellow);outline-offset:2px}
+button[aria-pressed="true"]{border-color:var(--yellow);color:var(--yellow)}
+.search{display:flex;gap:.4rem;margin-top:.8rem}
+.search input{flex:1;min-width:0;font:inherit;font-size:16px;color:var(--chalk);background:rgba(0,0,0,.18);border:1.5px solid var(--line);border-radius:.4rem;padding:.35rem .6rem}
+.search input::placeholder{color:var(--dim)}
+.search input:focus-visible{outline:2px solid var(--yellow);outline-offset:1px}
+.results{list-style:none;margin:.4rem 0 0;padding:0;border:1.5px solid var(--line);border-radius:.4rem}
+.results button{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:.5rem .7rem}
+.results li:last-child button{border-bottom:0}
+.results small{color:var(--dim);margin-left:.4rem}
+.status{color:var(--yellow);font-size:.9rem;margin:.8rem 0 0}
+.status:empty{display:none}
+
+.hero{padding:1.4rem 0 .6rem}
+.date{margin:0;color:var(--dim)}
+.verdict{font-size:clamp(2.6rem,13vw,3.8rem);font-weight:600;line-height:1.2;margin:.2rem 0 .6rem;letter-spacing:.06em}
+.stamp{display:inline-block;margin-left:.3em;padding:.05em .28em;color:var(--red);
+  border:3px solid var(--red);border-radius:52% 46% 50% 48% / 48% 52% 46% 54%;transform:rotate(-7deg)}
+.head{font-size:1.7rem;font-weight:600;color:var(--yellow);margin:0}
+.sub{margin:.2rem 0 1rem}
+.mods{margin:0 0 1rem;padding:0;list-style:none}
+.mods li::before{content:"・"}
+dl.facts{display:grid;grid-template-columns:auto 1fr;gap:.25rem 1rem;margin:0 0 1.1rem}
+dt{color:var(--dim)} dd{margin:0}
+.kunji{border-left:3px solid var(--yellow);padding:.2rem 0 .2rem .8rem;margin:0 0 1rem}
+.kunji small{display:block;color:var(--dim)}
+.kunji .more{display:block;margin-top:.5rem;font-size:.85rem}
+.real{font-size:.85rem;color:var(--dim);margin:0}
+
+.manual{margin-top:1rem;border-top:2px dashed var(--line);padding-top:1rem}
+.manual p{margin:0 0 .5rem}
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+
+h2{font-size:1.1rem;font-weight:600;margin:1.6rem 0 .4rem;border-bottom:2px dashed var(--line);padding-bottom:.3rem}
+ul.week{list-style:none;margin:0;padding:0}
+.week li{display:grid;grid-template-columns:5.8rem 1fr auto;gap:0 .6rem;padding:.55rem 0;border-bottom:1px solid var(--line);align-items:baseline}
+.week .h{color:var(--yellow);font-weight:600}
+.week .r{grid-column:2/3;font-size:.8rem;color:var(--dim)}
+.week .k{grid-row:1/3;grid-column:3;align-self:center;color:var(--red);border:2px solid var(--red);border-radius:50%;padding:.1rem .35rem;font-size:.85rem;transform:rotate(-8deg)}
+footer{margin-top:1.8rem;font-size:.78rem;color:var(--dim)}
+footer a{color:var(--dim)}
+@media (prefers-reduced-motion:no-preference){
+  .stamp{animation:press .5s ease-out .2s both}
+  @keyframes press{from{transform:rotate(-7deg) scale(1.8);opacity:0}to{transform:rotate(-7deg) scale(1);opacity:1}}
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>巣鴨の天気予報</h1>
+    <div class="place">
+      <span id="placeName">東京・巣鴨</span>
+      <button id="btnSugamo" type="button" aria-pressed="false">巣鴨</button>
+      <button id="btnHere" type="button" aria-pressed="false">現在地</button>
+    </div>
+  </header>
+  <form class="search" id="searchForm" role="search">
+    <input id="q" type="search" placeholder="地名を入力（例：札幌、那覇、軽井沢）" aria-label="地名" autocomplete="off">
+    <button type="submit">探す</button>
+  </form>
+  <ul class="results" id="results" hidden></ul>
+  <p class="status" id="status" role="status"></p>
+
+  <section class="hero" aria-live="polite">
+    <p class="date" id="hDate"></p>
+    <p class="verdict">本日<span class="stamp">決行</span></p>
+    <p class="head" id="hHead">…</p>
+    <p class="sub" id="hSub"></p>
+    <ul class="mods" id="hMods"></ul>
+    <dl class="facts">
+      <dt>朝礼</dt><dd id="fChorei"></dd>
+      <dt>強歩大会</dt><dd id="fKyoho"></dd>
+      <dt>遠泳</dt><dd id="fEnei"></dd>
+      <dt>決行確率</dt><dd id="fProb">100%</dd>
+      <dt>予想けが人</dt><dd id="fInjury"></dd>
+    </dl>
+    <p class="kunji" id="kunji"></p>
+    <p class="real" id="hReal"></p>
+  </section>
+
+  <section class="manual" id="manual" hidden>
+    <p>空を見て選んでください。</p>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section id="weekSec" hidden>
+    <h2>週間予報</h2>
+    <ul class="week" id="week"></ul>
+  </section>
+
+  <footer>
+    <p>※昭和の校風を再現したパロディです。実際の大雨・雷・猛暑には、本物の予報と常識で備えてください。</p>
+    <p>気象データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>（CC BY 4.0）</p>
+  </footer>
+</main>
+
+<script>
+const SUGAMO={name:"東京・巣鴨",lat:35.7334,lon:139.7394};
+const WD="日月火水木金土";
+const T={
+  clear:  {real:"晴れ", head:"快晴",           sub:"絶好の鍛錬日和。距離の上乗せを検討中。", chorei:"延長（60分〜、終了未定）", kyoho:"決行（距離増）", enei:"決行（ふんどし日和）", hurt:1},
+  cloudy: {real:"曇り", head:"晴れ",           sub:"日差しがないぶん、よく歩ける。",       chorei:"通常通り（約50分）", kyoho:"決行", enei:"決行（日焼けの心配なし）", hurt:1},
+  fog:    {real:"霧",   head:"晴れ（本物の霧）", sub:"前の者の背中を見て進め。",            chorei:"通常通り（約50分）", kyoho:"決行", enei:"決行（前の者のふんどしを見て泳げ）", hurt:2},
+  mist:   {real:"小雨", head:"巣鴨の霧",        sub:"雨ではない。霧である。傘は精神の弛み。", chorei:"通常通り（約50分）", kyoho:"決行", enei:"決行（どうせ濡れる）", hurt:2},
+  rain:   {real:"雨",   head:"しっとりした晴れ", sub:"制服が濡れても、明日には乾く。",       chorei:"通常通り（約50分・整列やや密）", kyoho:"決行", enei:"決行（上からも下からも水）", hurt:3},
+  heavy:  {real:"大雨", head:"天然のシャワー",   sub:"水気が多いことは認める。",            chorei:"短縮（49分）", kyoho:"決行（靴は乾かさない）", enei:"決行（陸も海も同じ）", hurt:5},
+  snow:   {real:"雪",   head:"白い晴れ",        sub:"雪中行軍の好機。足跡が校風を語る。",   chorei:"校庭にて（約50分・雪かき込み）", kyoho:"決行", enei:"寒中水泳に名称変更のうえ決行", hurt:6},
+  thunder:{real:"雷雨", head:"天の号令",        sub:"本日の訓示は空が行う。",              chorei:"屋内（唯一の譲歩・時間は据え置き）", kyoho:"決行", enei:"決行（海は広い）", hurt:4}
+};
+const KUNJI=[
+  "指導要領？ バカヤロー。指導要領は私である。",
+  "文科省が何と言おうと、巣鴨は巣鴨だ。バカヤロー。",
+  "ゆとり？ バカヤロー。ゆとりは卒業してから持て。",
+  "指導要領に雨天中止とは書いていない。書いてあっても読まん。",
+  "硬教育の「硬」は、硬派の「硬」である。",
+  "軟らかい教育からは、軟らかい人間しか育たん。我々は硬教育でいく。",
+  "硬教育とは、硬い心を作ることではない。折れない心を作ることだ。",
+  "新御三家？ 知らん。我々は御一家だ。",
+  "御三家は三つある。御一家は一つしかない。だから尊い。",
+  "他校と比べるな。比べられる側になれ。",
+  "雨の日にこそ、人間の地金が出る。",
+  "晴れの日に歩けるのは当たり前だ。",
+  "風邪は気の緩みから入る。気を締めよ。",
+  "40kmは遠くない。一歩を五万回重ねるだけだ。",
+  "海を恐れるな。ふんどしを締め直せ。",
+  "雨は上から降る。ならば前へ進め。",
+  "濡れた制服は乾く。緩んだ心は乾かない。",
+  "傘を持つ手があるなら、腕を振って歩け。",
+  "天気は変えられない。変わるのは君たちだ。",
+  "松葉杖は負傷ではない。装備である。",
+  "今年もけが人なし。大成功。バンザイ。",
+  "予報を見る暇があったら、靴紐を結べ。",
+  "話が長い？ バカヤロー。これでも短くしている。",
+  "最後にひとつだけ言っておく。"
+];
+const $=id=>document.getElementById(id);
+
+function fmt(s){
+  const [y,m,d]=s.split("-").map(Number);
+  const w=new Date(Date.UTC(y,m-1,d)).getUTCDay();
+  return {long:`${m}月${d}日（${WD[w]}）`,short:`${m}/${d}（${WD[w]}）`};
+}
+function todayStr(){
+  const n=new Date();const p=v=>String(v).padStart(2,"0");
+  return `${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}`;
+}
+function classify({code,sum}){
+  if(code>=95) return "thunder";
+  if((code>=71&&code<=77)||code===85||code===86) return "snow";
+  if(sum>=30||code===65||code===82) return "heavy";
+  if(sum>=5||code===63||code===81) return "rain";
+  if((code>=51&&code<=57)||sum>=1||code===61||code===80||code===66||code===67) return "mist";
+  if(code===45||code===48) return "fog";
+  if(code>=2) return "cloudy";
+  return "clear";
+}
+function mods(d){
+  const out=[];let hurt=0;
+  if(d.tmax!=null){
+    if(d.tmax>=35){out.push("猛暑？ いや、残暑である。");hurt+=2}
+    else if(d.tmax>=30){out.push("やや暖か。汗は努力の証。");hurt+=1}
+  }
+  if(d.tmin!=null){
+    if(d.tmin<=0){out.push("爽快。手袋は甘え。");hurt+=1}
+    else if(d.tmin<=5) out.push("涼しい。上着は一枚まで。");
+  }
+  if(d.wind!=null){
+    if(d.wind>=15){out.push("少々の風。姿勢で受け止めよ。");hurt+=2}
+    else if(d.wind>=10) out.push("追い風（帰りは向かい風）。");
+  }
+  return {out,hurt};
+}
+function realLine(d,k){
+  let s=T[k].real;
+  if(d.tmin!=null&&d.tmax!=null) s+=` ${Math.round(d.tmin)}〜${Math.round(d.tmax)}℃`;
+  if(d.pop!=null) s+=` 降水確率${d.pop}%`;
+  return s;
+}
+let cur=null,extra=0;
+function kunjiIndex(date){
+  let h=0;for(const c of date)h=(h*31+c.charCodeAt(0))>>>0;
+  return h%KUNJI.length;
+}
+function showKunji(i){
+  const k=$("kunji");k.innerHTML="";
+  const sm=document.createElement("small");sm.textContent="校長訓示";
+  const more=document.createElement("button");more.type="button";more.className="more";
+  more.textContent="もう一本（朝礼+5分）";
+  more.addEventListener("click",()=>{extra++;showKunji((i+1+Math.floor(Math.random()*(KUNJI.length-1)))%KUNJI.length);updateChorei()});
+  k.append(sm,`「${KUNJI[i]}」`,more);
+}
+function updateChorei(){
+  if(!cur)return;
+  $("fChorei").textContent=T[cur].chorei+(extra?`＋訓示追加で${extra*5}分`:"");
+}
+function renderHero(d,k){
+  const t=T[k],m=mods(d);
+  $("hDate").textContent=fmt(d.date).long;
+  $("hHead").textContent=t.head;
+  $("hSub").textContent=t.sub;
+  $("hMods").innerHTML="";
+  m.out.forEach(x=>{const li=document.createElement("li");li.textContent=x;$("hMods").appendChild(li)});
+  cur=k;extra=0;updateChorei();
+  $("fKyoho").textContent=t.kyoho;
+  $("fEnei").textContent=t.enei+(d.tmax!=null&&d.tmax<20?"。水温は気合いで上がる":"");
+  $("fProb").textContent=d.pop!=null?`100%（参考：降水確率 ${d.pop}%）`:"100%";
+  $("fInjury").textContent=`0名（松葉杖 ${t.hurt+m.hurt}名は数えない）`;
+  showKunji(kunjiIndex(d.date));
+  $("hReal").textContent="実際の予報："+realLine(d,k);
+}
+function renderWeek(days){
+  const ul=$("week");ul.innerHTML="";
+  days.slice(1).forEach(d=>{
+    const k=classify(d);const li=document.createElement("li");
+    li.innerHTML=`<span class="wd"></span><span class="h"></span><span class="k">決行</span><span class="r"></span>`;
+    li.querySelector(".wd").textContent=fmt(d.date).short;
+    li.querySelector(".h").textContent=T[k].head;
+    li.querySelector(".r").textContent=realLine(d,k);
+    ul.appendChild(li);
+  });
+  $("weekSec").hidden=false;
+}
+function setStatus(s){$("status").textContent=s}
+
+function buildChips(){
+  const box=$("chips");
+  Object.entries(T).forEach(([k,t])=>{
+    const b=document.createElement("button");b.type="button";b.textContent=t.real;
+    b.addEventListener("click",()=>{
+      box.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed","false"));
+      b.setAttribute("aria-pressed","true");
+      renderHero({date:todayStr()},k);
+    });
+    box.appendChild(b);
+  });
+}
+
+async function load(p){
+  $("placeName").textContent=p.name;
+  setStatus("天気を取得しています…");
+  const url=`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}`+
+    `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max`+
+    `&wind_speed_unit=ms&timezone=auto&forecast_days=7`;
+  try{
+    const r=await fetch(url);if(!r.ok)throw new Error(r.status);
+    const x=(await r.json()).daily;
+    const days=x.time.map((t,i)=>({date:t,code:x.weather_code[i],sum:x.precipitation_sum[i]??0,
+      pop:x.precipitation_probability_max[i],tmax:x.temperature_2m_max[i],tmin:x.temperature_2m_min[i],wind:x.wind_speed_10m_max[i]}));
+    renderHero(days[0],classify(days[0]));renderWeek(days);
+    $("manual").hidden=true;setStatus("");
+  }catch(e){
+    setStatus("この画面では天気データを取得できません。空を見て、下から選んでください。");
+    $("manual").hidden=false;$("weekSec").hidden=true;
+    renderHero({date:todayStr()},"mist");
+  }
+}
+
+$("btnSugamo").addEventListener("click",()=>{
+  $("btnSugamo").setAttribute("aria-pressed","true");$("btnHere").setAttribute("aria-pressed","false");remember(SUGAMO);load(SUGAMO);
+});
+$("btnHere").addEventListener("click",()=>{
+  if(!navigator.geolocation){setStatus("現在地を取得できません。巣鴨で表示しています。");return}
+  setStatus("現在地を確認しています…");
+  navigator.geolocation.getCurrentPosition(pos=>{
+    $("btnHere").setAttribute("aria-pressed","true");$("btnSugamo").setAttribute("aria-pressed","false");
+    const p={name:"現在地",lat:pos.coords.latitude,lon:pos.coords.longitude};remember(p);load(p);
+  },()=>setStatus("現在地を取得できませんでした。巣鴨で表示しています。"),{timeout:10000});
+});
+function remember(p){try{localStorage.setItem("sugamo-place",JSON.stringify(p))}catch(e){}}
+function recalled(){try{const v=JSON.parse(localStorage.getItem("sugamo-place"));return v&&v.lat!=null?v:null}catch(e){return null}}
+function pick(p){
+  $("results").hidden=true;$("q").value="";
+  $("btnSugamo").setAttribute("aria-pressed","false");$("btnHere").setAttribute("aria-pressed","false");
+  remember(p);load(p);
+}
+$("searchForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const q=$("q").value.trim();if(!q)return;
+  setStatus("場所を探しています…");
+  const ul=$("results");ul.innerHTML="";
+  try{
+    const r=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=ja&format=json`);
+    const j=await r.json();const list=j.results||[];
+    if(!list.length){setStatus(`「${q}」が見つかりません。市区町村名で試してください。`);ul.hidden=true;return}
+    list.forEach(x=>{
+      const li=document.createElement("li"),b=document.createElement("button"),sm=document.createElement("small");
+      b.type="button";b.textContent=x.name;
+      sm.textContent=[x.admin1,x.country].filter(Boolean).join("・");b.appendChild(sm);
+      b.addEventListener("click",()=>pick({name:x.name,lat:x.latitude,lon:x.longitude}));
+      li.appendChild(b);ul.appendChild(li);
+    });
+    ul.hidden=false;setStatus("");
+  }catch(err){setStatus("この画面では場所を検索できません。");}
+});
+buildChips();
+load(recalled()||SUGAMO);
+</script>
+</body>
+</html>
